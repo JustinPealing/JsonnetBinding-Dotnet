@@ -42,7 +42,7 @@ namespace JsonnetBinding.Tests
    ""x"": 10,
    ""y"": 11
 }
-", result);            
+", result);
         }
     }
 }

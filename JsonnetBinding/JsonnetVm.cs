@@ -22,10 +22,10 @@ namespace JsonnetBinding
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
 
-            var result = NativeMethods.jsonnet_evaluate_file(vm, filename, out int error);
+            var result = NativeMethods.jsonnet_evaluate_file(vm, filename, out bool error);
             var resultString = MarshalAndDeallocateString(vm, result);
 
-            if (error != 0) throw new JsonnetException(error, resultString);
+            if (error) throw new JsonnetException(resultString);
 
             return resultString;
         }
@@ -44,10 +44,10 @@ namespace JsonnetBinding
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
 
-            var result = NativeMethods.jsonnet_evaluate_snippet(vm, filename, snippet, out int error);
+            var result = NativeMethods.jsonnet_evaluate_snippet(vm, filename, snippet, out bool error);
             var resultString = MarshalAndDeallocateString(vm, result);
 
-            if (error != 0) throw new JsonnetException(error, resultString);
+            if (error) throw new JsonnetException(resultString);
 
             return resultString;
         }

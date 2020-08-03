@@ -94,10 +94,10 @@ namespace JsonnetBinding
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="filename">Path to a file containing Jsonnet code.</param>
-        /// <param name="error">Return by reference whether or not there was an error.</param>
+        /// <param name="error">Return whether or not there was an error.</param>
         /// <returns>Either JSON or the error message.</returns>
         [DllImport("libjsonnet")]
-        public static extern IntPtr jsonnet_evaluate_file(JsonnetVmHandle vm, string filename, out int error);
+        public static extern IntPtr jsonnet_evaluate_file(JsonnetVmHandle vm, string filename, out bool error);
         
         /// <summary>
         /// Evaluate a string containing Jsonnet code, return a JSON string.
@@ -105,10 +105,10 @@ namespace JsonnetBinding
         /// <param name="vm"></param>
         /// <param name="filename">Path to a file (used in error messages).</param>
         /// <param name="snippet">Jsonnet code to execute.</param>
-        /// <param name="error">Return by reference whether or not there was an error.</param>
+        /// <param name="error">Return whether or not there was an error.</param>
         /// <returns>Either JSON or the error message.</returns>
         [DllImport("libjsonnet")]
-        public static extern IntPtr jsonnet_evaluate_snippet(JsonnetVmHandle vm, string filename, string snippet, out int error);
+        public static extern IntPtr jsonnet_evaluate_snippet(JsonnetVmHandle vm, string filename, string snippet, out bool error);
 
         /// <summary>
         /// Allocate, resize, or free a buffer.  This will abort if the memory cannot be allocated.  It will only

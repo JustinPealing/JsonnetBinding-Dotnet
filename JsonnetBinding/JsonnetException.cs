@@ -7,6 +7,10 @@ namespace JsonnetBinding
     /// </summary>
     public class JsonnetException : Exception
     {
-        public JsonnetException(in int error, string message) : base(message) => HResult = error;
+        /// <summary>
+        /// Initializes a new instance of <see cref="JsonnetException"/>.
+        /// </summary>
+        /// <param name="message">Response from Jsonnet.</param>
+        public JsonnetException(string message) : base(message) { } 
     }
 }
