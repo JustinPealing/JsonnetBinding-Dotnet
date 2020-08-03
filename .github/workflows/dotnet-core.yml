@@ -23,7 +23,11 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: readelf
       run: readelf -d JsonnetBinding/libjsonnet.so
+    - name: readelf-libm
+      run: readelf -a /lib/x86_64-linux-gnu/libm.so.6
     - name: ldd
       run: ldd JsonnetBinding/libjsonnet.so
     - name: Test
       run: dotnet test --no-restore --verbosity normal
+
+
