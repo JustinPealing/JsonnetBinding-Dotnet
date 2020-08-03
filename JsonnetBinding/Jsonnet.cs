@@ -7,6 +7,9 @@ using ConsoleApp;
 
 namespace JsonnetBinding
 {
+    /// <summary>
+    /// Static methods for evaluating Jsonnet.
+    /// </summary>
     public static class Jsonnet
     {
         public static string EvaluateFile(

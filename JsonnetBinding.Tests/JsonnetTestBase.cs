@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace JsonnetBinding.Tests
@@ -11,7 +12,16 @@ namespace JsonnetBinding.Tests
     public abstract class JsonnetTestBase
     {
         protected abstract string Filename { get; }
-        protected abstract string Evaluate(string snippet);
+        protected abstract string Evaluate(
+            string snippet, 
+            int maxStack = -1,
+            int gcMinObjects = -1,
+            IDictionary<string, string> extVars = null,
+            IDictionary<string, string> extCodes = null,
+            IDictionary<string, string> tlaVars = null,
+            IDictionary<string, string> tlaCodes = null,
+            int maxTrace = -1,
+            ImportCallback importCallback = null);
         
         /// <summary>
         /// Test evaluating a basic snippet with all optional arguments left with their default values.
@@ -42,7 +52,32 @@ namespace JsonnetBinding.Tests
 	During manifestation	
 ", ex.Message);
         }
-        
-        
+
+        /// <summary>
+        /// Check that the maxStack parameter is passed to the Jsonnet VM correctly by running a snippet that
+        /// intentionally exceeds the supplied max stack size.
+        /// </summary>
+        [TestMethod]
+        public void MaxStack()
+        {
+            var snippet = @"
+{
+    a: { x: 0 },
+    b: self.a { x +: 1 },
+    c: self.b { x +: 1 } ,
+    d: self.c { x +: 1 } 
+}";
+
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(snippet, maxStack: 2));
+            
+            Assert.AreEqual($@"RUNTIME ERROR: max stack frames exceeded.
+	{Filename}:4:15-25	object <anonymous>
+	{Filename}:5:15-25	object <anonymous>
+	{Filename}:6:15-25	object <anonymous>
+	{Filename}:6:8-25	object <anonymous>
+	During manifestation	
+",
+                ex.Message);
+        }
     }
 }
