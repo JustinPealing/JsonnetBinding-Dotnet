@@ -21,9 +21,7 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore
-    - uses: actions/upload-artifact@v2
-      with:
-        name: my-artifact
-        path: .
     - name: Test
       run: dotnet test --no-restore --verbosity normal
+      env:
+        LD_DEBUG: all
