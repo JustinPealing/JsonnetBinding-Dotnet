@@ -14,13 +14,13 @@ namespace JsonnetBinding
     {
         public static string EvaluateFile(
             string filename,
-            int maxStack = -1,
-            int gcMinObjects = -1,
+            uint? maxStack = null,
+            uint? gcMinObjects = null,
             IDictionary<string, string> extVars = null,
             IDictionary<string, string> extCodes = null,
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
-            int maxTrace = -1,
+            uint? maxTrace = null,
             ImportCallback importCallback = null)
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
@@ -36,13 +36,13 @@ namespace JsonnetBinding
         public static string EvaluateSnippet(
             string filename,
             string snippet,
-            int maxStack = -1,
-            int gcMinObjects = -1,
+            uint? maxStack = null,
+            uint? gcMinObjects = null,
             IDictionary<string, string> extVars = null,
             IDictionary<string, string> extCodes = null,
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
-            int maxTrace = -1,
+            uint? maxTrace = null,
             ImportCallback importCallback = null)
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
@@ -56,20 +56,20 @@ namespace JsonnetBinding
         }
 
         private static JsonnetVmHandle MakeVm(
-            int maxStack,
-            int gcMinObjects,
+            uint? maxStack,
+            uint? gcMinObjects,
             IDictionary<string, string> extVars,
             IDictionary<string, string> extCodes,
             IDictionary<string, string> tlaVars,
             IDictionary<string, string> tlaCodes,
-            int maxTrace,
+            uint? maxTrace,
             ImportCallback importCallback)
         {
             var vm = NativeMethods.jsonnet_make();
 
-            if (maxStack != -1) NativeMethods.jsonnet_max_stack(vm, (uint) maxStack);
-            if (gcMinObjects != -1) NativeMethods.jsonnet_gc_min_objects(vm, (uint) gcMinObjects);
-            if (maxTrace != -1) NativeMethods.jsonnet_max_trace(vm, (uint) maxTrace);
+            if (maxStack != null) NativeMethods.jsonnet_max_stack(vm, maxStack.Value);
+            if (gcMinObjects != null) NativeMethods.jsonnet_gc_min_objects(vm, gcMinObjects.Value);
+            if (maxTrace != null) NativeMethods.jsonnet_max_trace(vm, maxTrace.Value);
 
             if (extVars != null)
                 foreach (var extVar in extVars)

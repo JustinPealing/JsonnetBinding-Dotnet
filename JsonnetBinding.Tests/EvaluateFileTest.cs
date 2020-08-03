@@ -11,13 +11,13 @@ namespace JsonnetBinding.Tests
 
         protected override string Evaluate(
             string snippet,
-            int maxStack,
-            int gcMinObjects,
+            uint? maxStack,
+            uint? gcMinObjects,
             IDictionary<string, string> extVars,
             IDictionary<string, string> extCodes,
             IDictionary<string, string> tlaVars,
             IDictionary<string, string> tlaCodes,
-            int maxTrace,
+            uint? maxTrace,
             ImportCallback importCallback)
         {
             File.WriteAllText(Filename, snippet);

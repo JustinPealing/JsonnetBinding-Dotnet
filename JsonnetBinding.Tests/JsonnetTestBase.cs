@@ -14,13 +14,13 @@ namespace JsonnetBinding.Tests
         protected abstract string Filename { get; }
         protected abstract string Evaluate(
             string snippet, 
-            int maxStack = -1,
-            int gcMinObjects = -1,
+            uint? maxStack = null,
+            uint? gcMinObjects = null,
             IDictionary<string, string> extVars = null,
             IDictionary<string, string> extCodes = null,
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
-            int maxTrace = -1,
+            uint? maxTrace = null,
             ImportCallback importCallback = null);
         
         /// <summary>
