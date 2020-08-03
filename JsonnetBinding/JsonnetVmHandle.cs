@@ -1,7 +1,6 @@
-﻿using JsonnetBinding;
-using Microsoft.Win32.SafeHandles;
+﻿using Microsoft.Win32.SafeHandles;
 
-namespace ConsoleApp
+namespace JsonnetBinding
 {
     /// <summary>
     /// Safe handle implementation for a pointer to the JsonnetVm struct.
