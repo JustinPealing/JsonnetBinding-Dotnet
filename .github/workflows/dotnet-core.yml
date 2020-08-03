@@ -22,6 +22,8 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: readelf
-      run: readelf -d JsonnetBinding/libjsonnet.so  
+      run: readelf -d JsonnetBinding/libjsonnet.so
+    - name: ldd
+      run: ldd JsonnetBinding/libjsonnet.so
     - name: Test
       run: dotnet test --no-restore --verbosity normal
