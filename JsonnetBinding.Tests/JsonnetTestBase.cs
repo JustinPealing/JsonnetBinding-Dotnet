@@ -80,5 +80,49 @@ namespace JsonnetBinding.Tests
 ",
                 ex.Message);
         }
+
+        [TestMethod]
+        public void NativeCallbacks()
+        {
+            var snippet = @"
+std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
+std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
+std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}}) &&
+true";
+
+            var result = Evaluate(snippet, nativeCallbacks: new Dictionary<string, NativeCallback>
+            {
+                {
+                    "concat", (object[] args, out bool success) =>
+                    {
+                        success = true;
+                        return args[0].ToString() + args[1];
+                    }
+                },
+                {
+                    "return_types", (object[] args, out bool success) =>
+                    {
+                        success = true;
+                        return new Dictionary<string, object>
+                        {
+                            {"a", new object[] {1, 2, 3, null, new object[] { }}},
+                            {"b", 1.0},
+                            {"c", true},
+                            {"d", null},
+                            {
+                                "e", new Dictionary<string, object>
+                                {
+                                    {"x", 1},
+                                    {"y", 2},
+                                    {"z", new[] {"foo"}},
+                                }
+                            },
+                        };
+                    }
+                }
+            });
+
+            Assert.AreEqual("true\n", result);
+        }
     }
 }
