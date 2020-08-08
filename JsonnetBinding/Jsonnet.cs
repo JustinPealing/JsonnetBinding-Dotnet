@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace JsonnetBinding
 {
@@ -56,65 +52,32 @@ namespace JsonnetBinding
         {
             var vm = new JsonnetVm();
 
-            if (maxStack != null) NativeMethods.jsonnet_max_stack(vm.Handle, maxStack.Value);
-            if (gcMinObjects != null) NativeMethods.jsonnet_gc_min_objects(vm.Handle, gcMinObjects.Value);
-            if (maxTrace != null) NativeMethods.jsonnet_max_trace(vm.Handle, maxTrace.Value);
+            if (maxStack != null) vm.MaxStack = maxStack.Value;
+            if (gcMinObjects != null) vm.GcMinObjects = gcMinObjects.Value;
+            if (maxTrace != null) vm.MaxTrace = maxTrace.Value;
 
             if (extVars != null)
                 foreach (var extVar in extVars)
-                    NativeMethods.jsonnet_ext_var(vm.Handle, extVar.Key, extVar.Value);
+                    vm.AddExtVar(extVar.Key, extVar.Value);
 
             if (extCodes != null)
                 foreach (var extCode in extCodes)
-                    NativeMethods.jsonnet_ext_code(vm.Handle, extCode.Key, extCode.Value);
+                    vm.AddExtCode(extCode.Key, extCode.Value);
 
             if (tlaVars != null)
-                foreach (var extCode in tlaVars)
-                    NativeMethods.jsonnet_tla_var(vm.Handle, extCode.Key, extCode.Value);
+                foreach (var tlaVar in tlaVars)
+                    vm.AddTlaVar(tlaVar.Key, tlaVar.Value);
 
             if (tlaCodes != null)
-                foreach (var extCode in tlaCodes)
-                    NativeMethods.jsonnet_tla_code(vm.Handle, extCode.Key, extCode.Value);
+                foreach (var tlaCode in tlaCodes)
+                    vm.AddTlaCode(tlaCode.Key, tlaCode.Value);
 
             if (importCallback != null)
             {
-                NativeMethods.jsonnet_import_callback(vm.Handle,
-                    (IntPtr ctx, string dir, string rel, out IntPtr here, out int success) =>
-                    {
-                        var result = importCallback(dir, rel, out var foundHere, out bool isSuccess);
-                        if (isSuccess)
-                        {
-                            success = 1;
-                            here = AllocJsonnetString(vm.Handle, foundHere);
-                        }
-                        else
-                        {
-                            success = 0;
-                            here = IntPtr.Zero;
-                        }
-                        return AllocJsonnetString(vm.Handle, result);
-                    }, IntPtr.Zero);
+                vm.SetImportCallback(importCallback);
             }
 
             return vm;
-        }
-
-        /// <summary>
-        /// Allocates a Jsonnet string.
-        /// </summary>
-        /// <param name="vm"></param>
-        /// <param name="value">Value to give the string.</param>
-        /// <returns>IntPtr to the allocated Jsonnet string</returns>
-        /// <remarks> 
-        /// This method allocates a Jsonnet string (using jsonnet_realloc) of the correct length for the supplied
-        /// string, and then copies the supplied value into the allocated string.
-        /// </remarks>
-        private static IntPtr AllocJsonnetString(JsonnetVmHandle vm, string value)
-        {
-            var bytes = Encoding.ASCII.GetBytes(value).Append((byte) 0).ToArray();
-            var result = NativeMethods.jsonnet_realloc(vm, IntPtr.Zero, new UIntPtr((uint) bytes.Length + 1));
-            Marshal.Copy(bytes, 0, result, bytes.Length);
-            return result;
         }
     }
 }

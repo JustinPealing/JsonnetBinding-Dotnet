@@ -88,7 +88,7 @@ true";
             //     success = true;
             //     return args[0].ToString() + args[1];
             // });
-            Vm.WithNativeCallback("return_types", new string[0], (object[] args, out bool success) =>
+            Vm.AddNativeCallback("return_types", new string[0], (object[] args, out bool success) =>
             {
                 success = true;
                 return new Dictionary<string, object>
