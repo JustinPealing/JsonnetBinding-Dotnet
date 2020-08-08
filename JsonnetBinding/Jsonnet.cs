@@ -74,7 +74,7 @@ namespace JsonnetBinding
 
             if (importCallback != null)
             {
-                vm.SetImportCallback(importCallback);
+                vm.ImportCallback = importCallback;
             }
 
             return vm;

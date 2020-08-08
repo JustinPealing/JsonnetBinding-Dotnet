@@ -76,7 +76,8 @@ namespace JsonnetBinding.Tests
         }
         
         /// <summary>
-        /// Native callbacks allow the host application to extend jsonnet with extra functions implemented in C#.
+        /// Native callbacks allow the host application to extend jsonnet with extra functions implemented in C#. Its
+        /// important that 
         /// </summary>
         [TestMethod]
         public void NativeCallbacks()
@@ -100,6 +101,8 @@ namespace JsonnetBinding.Tests
                     },
                 });
 
+            GC.Collect();
+            
             var result = Evaluate(@"
 std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
 std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
@@ -161,7 +164,7 @@ true
         [TestMethod]
         public void ExceptionThrownInImportCallback()
         {
-            Vm.SetImportCallback((string dir, string rel, out string here) => throw new Exception("Test error"));
+            Vm.ImportCallback = (string dir, string rel, out string here) => throw new Exception("Test error");
             
             var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("import 'test.libjsonnet'"));
             Assert.AreEqual($@"RUNTIME ERROR: couldn't open import ""test.libjsonnet"": Test error

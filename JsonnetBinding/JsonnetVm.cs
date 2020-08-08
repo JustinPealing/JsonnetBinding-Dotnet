@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -9,7 +10,9 @@ namespace JsonnetBinding
     public class JsonnetVm : IDisposable
     {
         private readonly JsonnetVmHandle _handle;
-
+        private readonly IDictionary<string, NativeMethods.JsonnetNativeCallback> _nativeCallbacks =
+            new Dictionary<string, NativeMethods.JsonnetNativeCallback>();
+        
         public JsonnetVm() => _handle = NativeMethods.jsonnet_make();
 
         public uint MaxStack
@@ -25,6 +28,32 @@ namespace JsonnetBinding
         public uint MaxTrace
         {
             set => NativeMethods.jsonnet_max_trace(_handle, value);
+        }
+
+        public ImportCallback ImportCallback
+        {
+            set
+            {
+                // TODO: Make sure that the callback cannot be GC'd
+                NativeMethods.jsonnet_import_callback(_handle,
+                    (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
+                    {
+                        try
+                        {
+                            var result = value(dir, rel, out var foundHere);
+                            // TODO: Make sure that these strings are de-allocated in a failure
+                            here = AllocJsonnetString(_handle, foundHere);
+                            success = true;
+                            return AllocJsonnetString(_handle, result);
+                        }
+                        catch (Exception e)
+                        {
+                            success = false;
+                            here = IntPtr.Zero;
+                            return AllocJsonnetString(_handle, e.Message);
+                        }
+                    }, IntPtr.Zero);
+            }
         }
 
         public string EvaluateFile(string filename)
@@ -71,53 +100,34 @@ namespace JsonnetBinding
             return this;
         }
 
-        public JsonnetVm SetImportCallback(ImportCallback importCallback)
-        {
-            NativeMethods.jsonnet_import_callback(_handle,
-                (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
-                {
-                    try
-                    {
-                        var result = importCallback(dir, rel, out var foundHere);
-                        here = AllocJsonnetString(_handle, foundHere);
-                        success = true;
-                        return AllocJsonnetString(_handle, result);
-                    }
-                    catch (Exception e)
-                    {
-                        success = false;
-                        here = IntPtr.Zero;
-                        return AllocJsonnetString(_handle, e.Message);
-                    }
-                }, IntPtr.Zero);
-            return this;
-        }
-        
         public JsonnetVm AddNativeCallback(string name, string[] parameters, NativeCallback callback)
         {
-            NativeMethods.jsonnet_native_callback(_handle, name,
-                (IntPtr ctx, IntPtr argv, out bool success) =>
+            NativeMethods.JsonnetNativeCallback nativeCallback = (IntPtr ctx, IntPtr argv, out bool success) =>
+            {
+                try
                 {
-                    try
-                    {
-                        var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
-                        var result = callback(convertedArgs);
-                        success = true;
-                        return JsonHelper.ConvertToNative(_handle, result);
-                    }
-                    catch (TargetInvocationException ex)
-                    {
-                        success = false;
-                        return JsonHelper.ConvertToNative(_handle, ex.InnerException?.Message);
-                    }
-                    catch (Exception ex)
-                    {
-                        success = false;
-                        return JsonHelper.ConvertToNative(_handle, ex.Message);
-                    }
-                },
-                IntPtr.Zero,
-                parameters.Append(null).ToArray());
+                    var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
+                    var result = callback(convertedArgs);
+                    success = true;
+                    return JsonHelper.ConvertToNative(_handle, result);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    success = false;
+                    return JsonHelper.ConvertToNative(_handle, ex.InnerException?.Message);
+                }
+                catch (Exception ex)
+                {
+                    success = false;
+                    return JsonHelper.ConvertToNative(_handle, ex.Message);
+                }
+            };
+            
+            NativeMethods.jsonnet_native_callback(
+                _handle, name, nativeCallback, IntPtr.Zero, parameters.Append(null).ToArray());
+            
+            // To make sure the delegate passed to jsonnet_native_callback is not garbage collected
+            _nativeCallbacks[name] = nativeCallback;
             return this;
         }
 

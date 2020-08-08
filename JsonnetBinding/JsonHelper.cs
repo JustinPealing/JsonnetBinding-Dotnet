@@ -56,6 +56,7 @@ namespace JsonnetBinding
                 return array;
             }
             
+            // TODO: Make sure any JSON objects created so far are de-allocated up
             throw new InvalidOperationException($"Not able to convert type {v.GetType()} to JsonnetJsonValue");
         }
 
