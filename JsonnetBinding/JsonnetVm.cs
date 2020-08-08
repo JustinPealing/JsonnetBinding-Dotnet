@@ -99,13 +99,14 @@ namespace JsonnetBinding
                     try
                     {
                         var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
-                        var result = callback(convertedArgs, out success);
+                        var result = callback(convertedArgs);
+                        success = true;
                         return JsonHelper.ConvertToNative(_handle, result);
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         success = false;
-                        return IntPtr.Zero;
+                        return JsonHelper.ConvertToNative(_handle, ex.Message);
                     }
                 },
                 IntPtr.Zero,

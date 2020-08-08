@@ -74,7 +74,7 @@ namespace JsonnetBinding.Tests
 ",
                 ex.Message);
         }
-
+        
         [TestMethod]
         public void NativeCallbacks()
         {
@@ -85,34 +85,40 @@ std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: 
 true
 ";
 
-            Vm.AddNativeCallback("concat", new[] {"foo", "bar"}, (object[] args, out bool success) =>
+            Vm.AddNativeCallback("concat", new[] {"foo", "bar"}, args => args[0].ToString() + args[1]);
+            Vm.AddNativeCallback("return_types", new string[0], args => new Dictionary<string, object>
             {
-                success = true;
-                return args[0].ToString() + args[1];
-            });
-            Vm.AddNativeCallback("return_types", new string[0], (object[] args, out bool success) =>
-            {
-                success = true;
-                return new Dictionary<string, object>
+                {"a", new object[] {1, 2, 3, null, new object[] { }}},
+                {"b", 1.0},
+                {"c", true},
+                {"d", null},
                 {
-                    {"a", new object[] {1, 2, 3, null, new object[] { }}},
-                    {"b", 1.0},
-                    {"c", true},
-                    {"d", null},
+                    "e", new Dictionary<string, object>
                     {
-                        "e", new Dictionary<string, object>
-                        {
-                            {"x", 1},
-                            {"y", 2},
-                            {"z", new[] {"foo"}},
-                        }
-                    },
-                };
+                        {"x", 1},
+                        {"y", 2},
+                        {"z", new[] {"foo"}},
+                    }
+                },
             });
 
             var result = Evaluate(snippet);
             
             Assert.AreEqual("true\n", result);
+        }
+        
+        /// <summary>
+        /// If a native callback fails, it should throw an exception.
+        /// </summary>
+        [TestMethod]
+        public void ExceptionThownInNativeCallback()
+        {
+            Vm.AddNativeCallback("test", new string[0], (object[] args) => throw new Exception("Test error"));
+
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')()"));
+            Assert.AreEqual($@"RUNTIME ERROR: Test error
+	{Filename}:1:1-21	
+", ex.Message);
         }
     }
 }
