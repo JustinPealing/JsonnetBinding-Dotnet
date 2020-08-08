@@ -110,20 +110,54 @@ true
             Assert.AreEqual("true\n", result);
         }
         
+        [TestMethod]
+        public void NativeCallbackUsingDelegate()
+        {
+            Vm.AddNativeCallback("concat", new Func<string, string, object>((a, b) => a + b));
+            Vm.AddNativeCallback("return_types", new Func<object>(() =>
+                new Dictionary<string, object>
+                {
+                    {"a", new object[] {1, 2, 3, null, new object[] { }}},
+                    {"b", 1.0},
+                    {"c", true},
+                    {"d", null},
+                    {
+                        "e", new Dictionary<string, object>
+                        {
+                            {"x", 1},
+                            {"y", 2},
+                            {"z", new[] {"foo"}},
+                        }
+                    },
+                }));
+
+            var result = Evaluate(@"
+std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
+std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
+std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}}) &&
+true
+");
+            
+            Assert.AreEqual("true\n", result);
+        }
+        
         /// <summary>
         /// If a native callback fails, it should throw an exception.
         /// </summary>
         [TestMethod]
         public void ExceptionThownInNativeCallback()
         {
-            Vm.AddNativeCallback("test", new string[0], (object[] args) => throw new Exception("Test error"));
+            Vm.AddNativeCallback("test", new Func<object, string>(s => throw new Exception("Test error")));
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')()"));
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')('a')"));
             Assert.AreEqual($@"RUNTIME ERROR: Test error
-	{Filename}:1:1-21	
+	{Filename}:1:1-24	
 ", ex.Message);
         }
 
+        /// <summary>
+        /// The import callback should throw an excpetion if there is an error.
+        /// </summary>
         [TestMethod]
         public void ExceptionThrownInImportCallback()
         {

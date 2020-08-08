@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -103,6 +104,11 @@ namespace JsonnetBinding
                         var result = callback(convertedArgs);
                         success = true;
                         return JsonHelper.ConvertToNative(_handle, result);
+                    }
+                    catch (TargetInvocationException ex)
+                    {
+                        success = false;
+                        return JsonHelper.ConvertToNative(_handle, ex.InnerException?.Message);
                     }
                     catch (Exception ex)
                     {

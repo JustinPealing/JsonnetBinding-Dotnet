@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace JsonnetBinding
 {
     /// <summary>
-    /// Static methods for evaluating Jsonnet.
+    /// Static helper methods for Jsonnet.
     /// </summary>
     public static class Jsonnet
     {
