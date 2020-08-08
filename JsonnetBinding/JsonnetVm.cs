@@ -98,7 +98,7 @@ namespace JsonnetBinding
                 {
                     try
                     {
-                        var convertedArgs = MarshalArgs(argv, parameters.Length);
+                        var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
                         var result = callback(convertedArgs, out success);
                         return JsonHelper.ConvertToNative(_handle, result);
                     }
@@ -113,16 +113,12 @@ namespace JsonnetBinding
             return this;
         }
 
-        private object[] MarshalArgs(IntPtr argv, int parameters)
+        private object[] MarshalNativeCallbackArgs(IntPtr argv, int parameters)
         {
-            if (parameters == 0)
-            {
-                return null;
-            }
+            if (parameters == 0) return Array.Empty<object>();
             var args = new IntPtr[parameters];
             Marshal.Copy(argv, args, 0, parameters);
-            var convertedArgs = args.Select(a => JsonHelper.ToManaged(_handle, a)).ToArray();
-            return convertedArgs;
+            return args.Select(a => JsonHelper.ToManaged(_handle, a)).ToArray();
         }
 
         /// <summary>
