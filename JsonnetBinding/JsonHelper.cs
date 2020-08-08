@@ -69,6 +69,7 @@ namespace JsonnetBinding
             var str = NativeMethods.jsonnet_json_extract_string(vm, v);
             if (str != IntPtr.Zero)
             {
+                // TODO: I Don't understand why this works, but putting the return type on the method as string does not 
                 return Marshal.PtrToStringUTF8(str);
             }
             

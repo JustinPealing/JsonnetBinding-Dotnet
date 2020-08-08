@@ -24,13 +24,7 @@ namespace JsonnetBinding
             IDictionary<string, NativeCallback> nativeCallbacks = null)
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
-
-            var result = NativeMethods.jsonnet_evaluate_file(vm, filename, out bool error);
-            var resultString = MarshalAndDeallocateString(vm, result);
-
-            if (error) throw new JsonnetException(resultString);
-
-            return resultString;
+            return vm.EvaluateFile(filename);
         }
 
         public static string EvaluateSnippet(
@@ -48,15 +42,11 @@ namespace JsonnetBinding
         {
             using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
 
-            var result = NativeMethods.jsonnet_evaluate_snippet(vm, filename, snippet, out bool error);
-            var resultString = MarshalAndDeallocateString(vm, result);
-
-            if (error) throw new JsonnetException(resultString);
-
-            return resultString;
+            return vm.EvaluateSnippet(filename, snippet); 
+            
         }
 
-        private static JsonnetVmHandle MakeVm(
+        private static JsonnetVm MakeVm(
             uint? maxStack,
             uint? gcMinObjects,
             IDictionary<string, string> extVars,
@@ -67,45 +57,45 @@ namespace JsonnetBinding
             ImportCallback importCallback,
             IDictionary<string, NativeCallback> nativeCallbacks)
         {
-            var vm = NativeMethods.jsonnet_make();
+            var vm = new JsonnetVm();
 
-            if (maxStack != null) NativeMethods.jsonnet_max_stack(vm, maxStack.Value);
-            if (gcMinObjects != null) NativeMethods.jsonnet_gc_min_objects(vm, gcMinObjects.Value);
-            if (maxTrace != null) NativeMethods.jsonnet_max_trace(vm, maxTrace.Value);
+            if (maxStack != null) NativeMethods.jsonnet_max_stack(vm.Handle, maxStack.Value);
+            if (gcMinObjects != null) NativeMethods.jsonnet_gc_min_objects(vm.Handle, gcMinObjects.Value);
+            if (maxTrace != null) NativeMethods.jsonnet_max_trace(vm.Handle, maxTrace.Value);
 
             if (extVars != null)
                 foreach (var extVar in extVars)
-                    NativeMethods.jsonnet_ext_var(vm, extVar.Key, extVar.Value);
+                    NativeMethods.jsonnet_ext_var(vm.Handle, extVar.Key, extVar.Value);
 
             if (extCodes != null)
                 foreach (var extCode in extCodes)
-                    NativeMethods.jsonnet_ext_code(vm, extCode.Key, extCode.Value);
+                    NativeMethods.jsonnet_ext_code(vm.Handle, extCode.Key, extCode.Value);
 
             if (tlaVars != null)
                 foreach (var extCode in tlaVars)
-                    NativeMethods.jsonnet_tla_var(vm, extCode.Key, extCode.Value);
+                    NativeMethods.jsonnet_tla_var(vm.Handle, extCode.Key, extCode.Value);
 
             if (tlaCodes != null)
                 foreach (var extCode in tlaCodes)
-                    NativeMethods.jsonnet_tla_code(vm, extCode.Key, extCode.Value);
+                    NativeMethods.jsonnet_tla_code(vm.Handle, extCode.Key, extCode.Value);
 
             if (importCallback != null)
             {
-                NativeMethods.jsonnet_import_callback(vm,
+                NativeMethods.jsonnet_import_callback(vm.Handle,
                     (IntPtr ctx, string dir, string rel, out IntPtr here, out int success) =>
                     {
                         var result = importCallback(dir, rel, out var foundHere, out bool isSuccess);
                         if (isSuccess)
                         {
                             success = 1;
-                            here = AllocJsonnetString(vm, foundHere);
+                            here = AllocJsonnetString(vm.Handle, foundHere);
                         }
                         else
                         {
                             success = 0;
                             here = IntPtr.Zero;
                         }
-                        return AllocJsonnetString(vm, result);
+                        return AllocJsonnetString(vm.Handle, result);
                     }, IntPtr.Zero);
             }
 
@@ -113,16 +103,16 @@ namespace JsonnetBinding
             {
                 foreach (var callback in nativeCallbacks)
                 {
-                    NativeMethods.jsonnet_native_callback(vm, callback.Key,
+                    NativeMethods.jsonnet_native_callback(vm.Handle, callback.Key,
                         (IntPtr ctx, IntPtr argv, out bool success) =>
                         {
                             try
                             {
                                 var args = new IntPtr[2];
                                 Marshal.Copy(argv, args, 0, 2);
-                                var convertedArgs = args.Select(a => JsonHelper.ToManaged(vm, a)).ToArray();
+                                var convertedArgs = args.Select(a => JsonHelper.ToManaged(vm.Handle, a)).ToArray();
                                 var result = callback.Value(convertedArgs, out success);
-                                return JsonHelper.ConvertToNative(vm, result);
+                                return JsonHelper.ConvertToNative(vm.Handle, result);
                             }
                             catch
                             {
@@ -158,21 +148,6 @@ namespace JsonnetBinding
             var result = NativeMethods.jsonnet_realloc(vm, IntPtr.Zero, new UIntPtr((uint) bytes.Length + 1));
             Marshal.Copy(bytes, 0, result, bytes.Length);
             return result;
-        }
-
-        /// <summary>
-        /// Marshal the contents of a string returned from Jsonnet, then de-allocates it.
-        /// </summary>
-        private static string MarshalAndDeallocateString(JsonnetVmHandle vm, IntPtr result)
-        {
-            try
-            {
-                return Marshal.PtrToStringAuto(result);
-            }
-            finally
-            {
-                NativeMethods.jsonnet_realloc(vm, result, UIntPtr.Zero);    
-            }
         }
     }
 }
