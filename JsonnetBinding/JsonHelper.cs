@@ -8,6 +8,11 @@ namespace JsonnetBinding
     {
         public static IntPtr ConvertToNative(JsonnetVmHandle vm, object v)
         {
+            if (v is null)
+            {
+                return NativeMethods.jsonnet_json_make_null(vm);
+            }
+            
             if (v is string str)
             {
                 return NativeMethods.jsonnet_json_make_string(vm, str);
@@ -18,6 +23,11 @@ namespace JsonnetBinding
                 return NativeMethods.jsonnet_json_make_bool(vm, b);
             }
 
+            if (v is int i)
+            {
+                return NativeMethods.jsonnet_json_make_number(vm, i);
+            }
+            
             if (v is double d)
             {
                 return NativeMethods.jsonnet_json_make_number(vm, d);

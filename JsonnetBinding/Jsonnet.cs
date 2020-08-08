@@ -114,17 +114,24 @@ namespace JsonnetBinding
                 foreach (var callback in nativeCallbacks)
                 {
                     NativeMethods.jsonnet_native_callback(vm, callback.Key,
-                        (IntPtr ctx, IntPtr[] argv, out bool success) =>
+                        (IntPtr ctx, IntPtr argv, out bool success) =>
                         {
-                            var args = argv.Select(x => JsonHelper.ToManaged(vm, x)).ToArray();
-                            var result = callback.Value(args, out success);
-                            return JsonHelper.ConvertToNative(vm, result);
+                            try
+                            {
+                                var result = callback.Value(new object[] { }, out success);
+                                return JsonHelper.ConvertToNative(vm, result);
+                            }
+                            catch
+                            {
+                                success = false;
+                                return IntPtr.Zero;
+                            }
                         }, 
                         IntPtr.Zero,
-                        new[]
+                        new string[]
                         {
                             // TODO: How should the caller pass these?
-                            "a", "b"
+                            null
                         });
                 }
             }

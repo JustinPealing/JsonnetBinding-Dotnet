@@ -13,7 +13,7 @@ namespace JsonnetBinding
             IntPtr ctx, string baseDir, string rel, out IntPtr foundHere, out int success);
 
         public delegate IntPtr JsonnetNativeCallback(
-            IntPtr ctx, IntPtr[] argv, out bool success);
+            IntPtr ctx, IntPtr argv, out bool success);
         
         [DllImport("libjsonnet.so")]
         public static extern JsonnetVmHandle jsonnet_make();
