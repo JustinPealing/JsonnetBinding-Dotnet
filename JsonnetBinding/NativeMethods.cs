@@ -10,7 +10,7 @@ namespace JsonnetBinding
     internal static class NativeMethods
     {
         public delegate IntPtr JsonnetImportCallback(
-            IntPtr ctx, string baseDir, string rel, out IntPtr foundHere, out int success);
+            IntPtr ctx, string baseDir, string rel, out IntPtr foundHere, out bool success);
 
         public delegate IntPtr JsonnetNativeCallback(
             IntPtr ctx, IntPtr argv, out bool success);

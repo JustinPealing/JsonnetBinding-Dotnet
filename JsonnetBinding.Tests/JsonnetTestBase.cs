@@ -75,34 +75,37 @@ namespace JsonnetBinding.Tests
                 ex.Message);
         }
         
+        /// <summary>
+        /// Native callbacks allow the host application to extend jsonnet with extra functions implemented in C#.
+        /// </summary>
         [TestMethod]
         public void NativeCallbacks()
         {
-            var snippet = @"
+            Vm.AddNativeCallback("concat", new[] {"foo", "bar"}, 
+                args => args[0].ToString() + args[1]);
+            Vm.AddNativeCallback("return_types", new string[0],
+                args => new Dictionary<string, object>
+                {
+                    {"a", new object[] {1, 2, 3, null, new object[] { }}},
+                    {"b", 1.0},
+                    {"c", true},
+                    {"d", null},
+                    {
+                        "e", new Dictionary<string, object>
+                        {
+                            {"x", 1},
+                            {"y", 2},
+                            {"z", new[] {"foo"}},
+                        }
+                    },
+                });
+
+            var result = Evaluate(@"
 std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
 std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
 std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}}) &&
 true
-";
-
-            Vm.AddNativeCallback("concat", new[] {"foo", "bar"}, args => args[0].ToString() + args[1]);
-            Vm.AddNativeCallback("return_types", new string[0], args => new Dictionary<string, object>
-            {
-                {"a", new object[] {1, 2, 3, null, new object[] { }}},
-                {"b", 1.0},
-                {"c", true},
-                {"d", null},
-                {
-                    "e", new Dictionary<string, object>
-                    {
-                        {"x", 1},
-                        {"y", 2},
-                        {"z", new[] {"foo"}},
-                    }
-                },
-            });
-
-            var result = Evaluate(snippet);
+");
             
             Assert.AreEqual("true\n", result);
         }
@@ -118,6 +121,17 @@ true
             var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')()"));
             Assert.AreEqual($@"RUNTIME ERROR: Test error
 	{Filename}:1:1-21	
+", ex.Message);
+        }
+
+        [TestMethod]
+        public void ExceptionThrownInImportCallback()
+        {
+            Vm.SetImportCallback((string dir, string rel, out string here) => throw new Exception("Test error"));
+            
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("import 'test.libjsonnet'"));
+            Assert.AreEqual($@"RUNTIME ERROR: couldn't open import ""test.libjsonnet"": Test error
+	{Filename}:1:1-25	
 ", ex.Message);
         }
     }

@@ -73,20 +73,21 @@ namespace JsonnetBinding
         public JsonnetVm SetImportCallback(ImportCallback importCallback)
         {
             NativeMethods.jsonnet_import_callback(_handle,
-                (IntPtr ctx, string dir, string rel, out IntPtr here, out int success) =>
+                (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
                 {
-                    var result = importCallback(dir, rel, out var foundHere, out bool isSuccess);
-                    if (isSuccess)
+                    try
                     {
-                        success = 1;
+                        var result = importCallback(dir, rel, out var foundHere);
                         here = AllocJsonnetString(_handle, foundHere);
+                        success = true;
+                        return AllocJsonnetString(_handle, result);
                     }
-                    else
+                    catch (Exception e)
                     {
-                        success = 0;
+                        success = false;
                         here = IntPtr.Zero;
+                        return AllocJsonnetString(_handle, e.Message);
                     }
-                    return AllocJsonnetString(_handle, result);
                 }, IntPtr.Zero);
             return this;
         }
