@@ -20,10 +20,9 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
             uint? maxTrace = null,
-            ImportCallback importCallback = null,
-            IDictionary<string, NativeCallback> nativeCallbacks = null)
+            ImportCallback importCallback = null)
         {
-            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
+            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
             return vm.EvaluateFile(filename);
         }
 
@@ -37,10 +36,9 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
             uint? maxTrace = null,
-            ImportCallback importCallback = null,
-            IDictionary<string, NativeCallback> nativeCallbacks = null)
+            ImportCallback importCallback = null)
         {
-            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
+            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
 
             return vm.EvaluateSnippet(filename, snippet); 
             
@@ -54,8 +52,7 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars,
             IDictionary<string, string> tlaCodes,
             uint? maxTrace,
-            ImportCallback importCallback,
-            IDictionary<string, NativeCallback> nativeCallbacks)
+            ImportCallback importCallback)
         {
             var vm = new JsonnetVm();
 
@@ -99,36 +96,6 @@ namespace JsonnetBinding
                     }, IntPtr.Zero);
             }
 
-            if (nativeCallbacks != null)
-            {
-                foreach (var callback in nativeCallbacks)
-                {
-                    NativeMethods.jsonnet_native_callback(vm.Handle, callback.Key,
-                        (IntPtr ctx, IntPtr argv, out bool success) =>
-                        {
-                            try
-                            {
-                                var args = new IntPtr[2];
-                                Marshal.Copy(argv, args, 0, 2);
-                                var convertedArgs = args.Select(a => JsonHelper.ToManaged(vm.Handle, a)).ToArray();
-                                var result = callback.Value(convertedArgs, out success);
-                                return JsonHelper.ConvertToNative(vm.Handle, result);
-                            }
-                            catch
-                            {
-                                success = false;
-                                return IntPtr.Zero;
-                            }
-                        }, 
-                        IntPtr.Zero,
-                        new string[]
-                        {
-                            // TODO: How should the caller pass these?
-                            "foo", "bar", null
-                        });
-                }
-            }
-            
             return vm;
         }
 

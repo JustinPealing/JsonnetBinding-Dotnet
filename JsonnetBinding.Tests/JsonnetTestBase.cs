@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,18 +12,9 @@ namespace JsonnetBinding.Tests
     /// </summary>
     public abstract class JsonnetTestBase
     {
+        protected readonly JsonnetVm Vm = new JsonnetVm();
         protected abstract string Filename { get; }
-        protected abstract string Evaluate(
-            string snippet, 
-            uint? maxStack = null,
-            uint? gcMinObjects = null,
-            IDictionary<string, string> extVars = null,
-            IDictionary<string, string> extCodes = null,
-            IDictionary<string, string> tlaVars = null,
-            IDictionary<string, string> tlaCodes = null,
-            uint? maxTrace = null,
-            ImportCallback importCallback = null,
-            IDictionary<string, NativeCallback> nativeCallbacks = null);
+        protected abstract string Evaluate(string snippet);
         
         /// <summary>
         /// Test evaluating a basic snippet with all optional arguments left with their default values.
@@ -61,6 +53,8 @@ namespace JsonnetBinding.Tests
         [TestMethod]
         public void MaxStack()
         {
+            Vm.MaxStack = 2;
+            
             var snippet = @"
 {
     a: { x: 0 },
@@ -69,7 +63,7 @@ namespace JsonnetBinding.Tests
     d: self.c { x +: 1 } 
 }";
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(snippet, maxStack: 2));
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(snippet));
             
             Assert.AreEqual($@"RUNTIME ERROR: max stack frames exceeded.
 	{Filename}:4:15-25	object <anonymous>
@@ -86,41 +80,36 @@ namespace JsonnetBinding.Tests
         {
             var snippet = @"
 std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
-std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
+std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}}) &&
 true";
 
-            var result = Evaluate(snippet, nativeCallbacks: new Dictionary<string, NativeCallback>
+            // Vm.WithNativeCallback("concat", new[] {"foo", "bar"}, (object[] args, out bool success) =>
+            // {
+            //     success = true;
+            //     return args[0].ToString() + args[1];
+            // });
+            Vm.WithNativeCallback("return_types", new string[0], (object[] args, out bool success) =>
             {
+                success = true;
+                return new Dictionary<string, object>
                 {
-                    "concat", (object[] args, out bool success) =>
+                    {"a", new object[] {1, 2, 3, null, new object[] { }}},
+                    {"b", 1.0},
+                    {"c", true},
+                    {"d", null},
                     {
-                        success = true;
-                        return args[0].ToString() + args[1];
-                    }
-                },
-                {
-                    "return_types", (object[] args, out bool success) =>
-                    {
-                        success = true;
-                        return new Dictionary<string, object>
+                        "e", new Dictionary<string, object>
                         {
-                            {"a", new object[] {1, 2, 3, null, new object[] { }}},
-                            {"b", 1.0},
-                            {"c", true},
-                            {"d", null},
-                            {
-                                "e", new Dictionary<string, object>
-                                {
-                                    {"x", 1},
-                                    {"y", 2},
-                                    {"z", new[] {"foo"}},
-                                }
-                            },
-                        };
-                    }
-                }
+                            {"x", 1},
+                            {"y", 2},
+                            {"z", new[] {"foo"}},
+                        }
+                    },
+                };
             });
 
+            var result = Evaluate(snippet);
+            
             Assert.AreEqual("true\n", result);
         }
     }
