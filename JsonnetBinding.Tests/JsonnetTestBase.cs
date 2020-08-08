@@ -21,7 +21,8 @@ namespace JsonnetBinding.Tests
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
             uint? maxTrace = null,
-            ImportCallback importCallback = null);
+            ImportCallback importCallback = null,
+            IDictionary<string, NativeCallback> nativeCallbacks = null);
         
         /// <summary>
         /// Test evaluating a basic snippet with all optional arguments left with their default values.

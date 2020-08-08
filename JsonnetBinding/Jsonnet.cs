@@ -20,9 +20,10 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
             uint? maxTrace = null,
-            ImportCallback importCallback = null)
+            ImportCallback importCallback = null,
+            IDictionary<string, NativeCallback> nativeCallbacks = null)
         {
-            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
+            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
 
             var result = NativeMethods.jsonnet_evaluate_file(vm, filename, out bool error);
             var resultString = MarshalAndDeallocateString(vm, result);
@@ -42,9 +43,10 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars = null,
             IDictionary<string, string> tlaCodes = null,
             uint? maxTrace = null,
-            ImportCallback importCallback = null)
+            ImportCallback importCallback = null,
+            IDictionary<string, NativeCallback> nativeCallbacks = null)
         {
-            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback);
+            using var vm = MakeVm(maxStack, gcMinObjects, extVars, extCodes, tlaVars, tlaCodes, maxTrace, importCallback, nativeCallbacks);
 
             var result = NativeMethods.jsonnet_evaluate_snippet(vm, filename, snippet, out bool error);
             var resultString = MarshalAndDeallocateString(vm, result);
@@ -62,7 +64,8 @@ namespace JsonnetBinding
             IDictionary<string, string> tlaVars,
             IDictionary<string, string> tlaCodes,
             uint? maxTrace,
-            ImportCallback importCallback)
+            ImportCallback importCallback,
+            IDictionary<string, NativeCallback> nativeCallbacks)
         {
             var vm = NativeMethods.jsonnet_make();
 
@@ -104,6 +107,26 @@ namespace JsonnetBinding
                         }
                         return AllocJsonnetString(vm, result);
                     }, IntPtr.Zero);
+            }
+
+            if (nativeCallbacks != null)
+            {
+                foreach (var callback in nativeCallbacks)
+                {
+                    NativeMethods.jsonnet_native_callback(vm, callback.Key,
+                        (IntPtr ctx, IntPtr[] argv, out bool success) =>
+                        {
+                            var args = argv.Select(x => JsonHelper.ToManaged(vm, x)).ToArray();
+                            var result = callback.Value(args, out success);
+                            return JsonHelper.ConvertToNative(vm, result);
+                        }, 
+                        IntPtr.Zero,
+                        new[]
+                        {
+                            // TODO: How should the caller pass these?
+                            "a", "b"
+                        });
+                }
             }
             
             return vm;

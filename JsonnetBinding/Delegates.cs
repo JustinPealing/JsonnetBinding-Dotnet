@@ -11,4 +11,6 @@ namespace JsonnetBinding
     /// <param name="success">Set this to true to indicate success and false for failure.</param>
     /// <returns>The content of the imported file, or an error message.</returns>
     public delegate string ImportCallback(string baseDir, string rel, out string foundHere, out bool success);
+
+    public delegate object NativeCallback(object[] args, out bool success);
 }

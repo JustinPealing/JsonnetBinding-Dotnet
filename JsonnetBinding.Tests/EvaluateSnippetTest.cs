@@ -17,7 +17,8 @@ namespace JsonnetBinding.Tests
             IDictionary<string, string> tlaVars,
             IDictionary<string, string> tlaCodes,
             uint? maxTrace,
-            ImportCallback importCallback)
+            ImportCallback importCallback,
+            IDictionary<string, NativeCallback> nativeCallbacks)
         {
             return Jsonnet.EvaluateSnippet(
                 Filename,
@@ -29,7 +30,8 @@ namespace JsonnetBinding.Tests
                 tlaVars,
                 tlaCodes,
                 maxTrace,
-                importCallback);
+                importCallback,
+                nativeCallbacks);
         }
     }
 }
