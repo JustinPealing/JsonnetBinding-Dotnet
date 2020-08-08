@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace JsonnetBinding
 {
@@ -66,9 +67,9 @@ namespace JsonnetBinding
             }
 
             var str = NativeMethods.jsonnet_json_extract_string(vm, v);
-            if (str != null)
+            if (str != IntPtr.Zero)
             {
-                return str;
+                return Marshal.PtrToStringUTF8(str);
             }
             
             if (NativeMethods.jsonnet_json_extract_number(vm, v, out var val))

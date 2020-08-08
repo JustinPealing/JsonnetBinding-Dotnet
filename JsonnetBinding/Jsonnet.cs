@@ -118,7 +118,10 @@ namespace JsonnetBinding
                         {
                             try
                             {
-                                var result = callback.Value(new object[] { }, out success);
+                                var args = new IntPtr[2];
+                                Marshal.Copy(argv, args, 0, 2);
+                                var convertedArgs = args.Select(a => JsonHelper.ToManaged(vm, a)).ToArray();
+                                var result = callback.Value(convertedArgs, out success);
                                 return JsonHelper.ConvertToNative(vm, result);
                             }
                             catch
@@ -131,7 +134,7 @@ namespace JsonnetBinding
                         new string[]
                         {
                             // TODO: How should the caller pass these?
-                            null
+                            "foo", "bar", null
                         });
                 }
             }

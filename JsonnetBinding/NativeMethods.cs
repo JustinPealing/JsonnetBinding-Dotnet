@@ -31,7 +31,7 @@ namespace JsonnetBinding
         public static extern void jsonnet_string_output(JsonnetVmHandle vm, int v);
 
         [DllImport("libjsonnet.so")]
-        public static extern string jsonnet_json_extract_string(JsonnetVmHandle vm, IntPtr v);
+        public static extern IntPtr jsonnet_json_extract_string(JsonnetVmHandle vm, IntPtr v);
 
         [DllImport("libjsonnet.so")]
         public static extern bool jsonnet_json_extract_number(JsonnetVmHandle vm, IntPtr v, out double outVal);
