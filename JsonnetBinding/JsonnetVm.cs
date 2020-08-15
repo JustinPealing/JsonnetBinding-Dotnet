@@ -100,14 +100,16 @@ namespace JsonnetBinding
             return this;
         }
 
-        public JsonnetVm AddNativeCallback(string name, string[] parameters, NativeCallback callback)
+        public JsonnetVm AddNativeCallback(string name, Delegate d)
         {
-            NativeMethods.JsonnetNativeCallback nativeCallback = (IntPtr ctx, IntPtr argv, out bool success) =>
+            var parameters = d.Method.GetParameters().Select(p => p.Name).ToArray();
+
+            IntPtr NativeCallback(IntPtr ctx, IntPtr argv, out bool success)
             {
                 try
                 {
                     var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
-                    var result = callback(convertedArgs);
+                    var result = d.Method.Invoke(d.Target, convertedArgs);
                     success = true;
                     return JsonHelper.ConvertToNative(_handle, result);
                 }
@@ -121,16 +123,16 @@ namespace JsonnetBinding
                     success = false;
                     return JsonHelper.ConvertToNative(_handle, ex.Message);
                 }
-            };
-            
+            }
+
             NativeMethods.jsonnet_native_callback(
-                _handle, name, nativeCallback, IntPtr.Zero, parameters.Append(null).ToArray());
+                _handle, name, NativeCallback, IntPtr.Zero, parameters.Append(null).ToArray());
             
             // To make sure the delegate passed to jsonnet_native_callback is not garbage collected
-            _nativeCallbacks[name] = nativeCallback;
+            _nativeCallbacks[name] = NativeCallback;
             return this;
         }
-
+        
         private object[] MarshalNativeCallbackArgs(IntPtr argv, int parameters)
         {
             if (parameters == 0) return Array.Empty<object>();

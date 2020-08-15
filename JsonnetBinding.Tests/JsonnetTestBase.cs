@@ -92,40 +92,6 @@ namespace JsonnetBinding.Tests
         /// important that the callback cannot be garbage collected while in use.
         /// </summary>
         [TestMethod]
-        public void NativeCallbacks()
-        {
-            Vm.AddNativeCallback("concat", new[] {"foo", "bar"}, 
-                args => args[0].ToString() + args[1]);
-            Vm.AddNativeCallback("return_types", new string[0],
-                args => new Dictionary<string, object>
-                {
-                    {"a", new object[] {1, 2, 3, null, new object[] { }}},
-                    {"b", 1.0},
-                    {"c", true},
-                    {"d", null},
-                    {
-                        "e", new Dictionary<string, object>
-                        {
-                            {"x", 1},
-                            {"y", 2},
-                            {"z", new[] {"foo"}},
-                        }
-                    },
-                });
-
-            GC.Collect();
-            
-            var result = Evaluate(@"
-std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
-std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
-std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}}) &&
-true
-");
-            
-            Assert.AreEqual("true\n", result);
-        }
-        
-        [TestMethod]
         public void NativeCallbackUsingDelegate()
         {
             Vm.AddNativeCallback("concat", new Func<string, string, object>((a, b) => a + b));
@@ -155,7 +121,7 @@ true
             
             Assert.AreEqual("true\n", result);
         }
-        
+
         /// <summary>
         /// If a native callback fails, it should throw an exception.
         /// </summary>
