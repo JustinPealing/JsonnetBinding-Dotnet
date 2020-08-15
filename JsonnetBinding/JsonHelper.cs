@@ -9,55 +9,65 @@ namespace JsonnetBinding
     {
         public static IntPtr ConvertToNative(JsonnetVmHandle vm, object v)
         {
-            if (v is null)
+            return v switch
             {
-                return NativeMethods.jsonnet_json_make_null(vm);
-            }
-            
-            if (v is string str)
-            {
-                return NativeMethods.jsonnet_json_make_string(vm, str);
-            }
+                null => NativeMethods.jsonnet_json_make_null(vm),
+                string str => NativeMethods.jsonnet_json_make_string(vm, str),
+                bool b => NativeMethods.jsonnet_json_make_bool(vm, b),
+                int i => NativeMethods.jsonnet_json_make_number(vm, i),
+                double d => NativeMethods.jsonnet_json_make_number(vm, d),
+                IDictionary<string, object> dictionary => ConvertDictionaryToNative(vm, dictionary),
+                IEnumerable enumerable => ConvertEnumerableToNative(vm, enumerable),
+                _ => ConvertObjectPropertiesToNative(vm, v)
+            };
+        }
 
-            if (v is bool b)
+        private static IntPtr ConvertDictionaryToNative(JsonnetVmHandle vm, IDictionary<string, object> dictionary)
+        {
+            var obj = NativeMethods.jsonnet_json_make_object(vm);
+            try
             {
-                return NativeMethods.jsonnet_json_make_bool(vm, b);
-            }
-
-            if (v is int i)
-            {
-                return NativeMethods.jsonnet_json_make_number(vm, i);
-            }
-            
-            if (v is double d)
-            {
-                return NativeMethods.jsonnet_json_make_number(vm, d);
-            }
-
-            if (v is IDictionary<string, object> dictionary)
-            {
-                var obj = NativeMethods.jsonnet_json_make_object(vm);
                 foreach (var val in dictionary)
-                {
                     NativeMethods.jsonnet_json_object_append(vm, obj, val.Key, ConvertToNative(vm, val.Value));
-                }
-
                 return obj;
             }
-            
-            if (v is IEnumerable enumerable)
+            catch (Exception e)
             {
-                var array = NativeMethods.jsonnet_json_make_array(vm);
-                foreach (var val in enumerable)
-                {
-                    NativeMethods.jsonnet_json_array_append(vm, array, ConvertToNative(vm, val));
-                }
+                NativeMethods.jsonnet_json_destroy(vm, obj);
+                throw;
+            }
+        }
 
+        private static IntPtr ConvertEnumerableToNative(JsonnetVmHandle vm, IEnumerable enumerable)
+        {
+            var array = NativeMethods.jsonnet_json_make_array(vm);
+            try
+            {
+                foreach (var val in enumerable)
+                    NativeMethods.jsonnet_json_array_append(vm, array, ConvertToNative(vm, val));
                 return array;
             }
-            
-            // TODO: Make sure any JSON objects created so far are de-allocated up
-            throw new InvalidOperationException($"Not able to convert type {v.GetType()} to JsonnetJsonValue");
+            catch
+            {
+                NativeMethods.jsonnet_json_destroy(vm, array);
+                throw;
+            }
+        }
+
+        private static IntPtr ConvertObjectPropertiesToNative(JsonnetVmHandle vm, object v)
+        {
+            var obj = NativeMethods.jsonnet_json_make_object(vm);
+            try
+            {
+                foreach (var p in v.GetType().GetProperties())
+                    NativeMethods.jsonnet_json_object_append(vm, obj, p.Name, ConvertToNative(vm, p.GetValue(v)));
+                return obj;
+            }
+            catch
+            {
+                NativeMethods.jsonnet_json_destroy(vm, obj);
+                throw;
+            }
         }
 
         /// <summary>
