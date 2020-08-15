@@ -9,6 +9,4 @@ namespace JsonnetBinding
     /// necessary so that imports from the content of the imported file can be resolved correctly. </param>
     /// <returns>The content of the imported file, or an error message.</returns>
     public delegate string ImportCallback(string baseDir, string rel, out string foundHere);
-
-    public delegate object NativeCallback(object[] args);
 }
