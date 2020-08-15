@@ -12,6 +12,7 @@ namespace JsonnetBinding
         private readonly JsonnetVmHandle _handle;
         private readonly IDictionary<string, NativeMethods.JsonnetNativeCallback> _nativeCallbacks =
             new Dictionary<string, NativeMethods.JsonnetNativeCallback>();
+        private NativeMethods.JsonnetImportCallback _importCallback;
         
         public JsonnetVm() => _handle = NativeMethods.jsonnet_make();
 
@@ -34,25 +35,24 @@ namespace JsonnetBinding
         {
             set
             {
-                // TODO: Make sure that the callback cannot be GC'd
-                NativeMethods.jsonnet_import_callback(_handle,
-                    (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
+                _importCallback = (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
+                {
+                    try
                     {
-                        try
-                        {
-                            var result = value(dir, rel, out var foundHere);
-                            // TODO: Make sure that these strings are de-allocated in a failure
-                            here = AllocJsonnetString(_handle, foundHere);
-                            success = true;
-                            return AllocJsonnetString(_handle, result);
-                        }
-                        catch (Exception e)
-                        {
-                            success = false;
-                            here = IntPtr.Zero;
-                            return AllocJsonnetString(_handle, e.Message);
-                        }
-                    }, IntPtr.Zero);
+                        var result = value(dir, rel, out var foundHere);
+                        // TODO: Make sure that these strings are de-allocated in a failure
+                        here = AllocJsonnetString(_handle, foundHere);
+                        success = true;
+                        return AllocJsonnetString(_handle, result);
+                    }
+                    catch (Exception e)
+                    {
+                        success = false;
+                        here = IntPtr.Zero;
+                        return AllocJsonnetString(_handle, e.Message);
+                    }
+                };
+                NativeMethods.jsonnet_import_callback(_handle, _importCallback, IntPtr.Zero);
             }
         }
 

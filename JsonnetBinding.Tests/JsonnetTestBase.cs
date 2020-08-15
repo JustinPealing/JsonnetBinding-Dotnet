@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace JsonnetBinding.Tests
@@ -13,7 +14,18 @@ namespace JsonnetBinding.Tests
     public abstract class JsonnetTestBase
     {
         protected readonly JsonnetVm Vm = new JsonnetVm();
+        
+        /// <summary>
+        /// Returns the path to the file. In EvaluateSnippetTest this is a hard-coded value, but for EvaluateFileTest
+        /// this is the path to some dynamically created temporary file.
+        /// This properly is mostly used to check error messages.
+        /// </summary>
         protected abstract string Filename { get; }
+        
+        /// <summary>
+        /// Evaluates the given snippet. This will either invoke EvaluateSnippet, or write the snippet to a file and
+        /// invoke EvaluateFile.
+        /// </summary>
         protected abstract string Evaluate(string snippet);
         
         /// <summary>
@@ -35,7 +47,7 @@ namespace JsonnetBinding.Tests
         /// If there is an error in the supplied jsonnet, a <see cref="JsonnetException"/> is thrown. 
         /// </summary>
         [TestMethod]
-        public void Error()
+        public void ErrorEvaluatingThrowsException()
         {
             var ex = Assert.ThrowsException<JsonnetException>(() =>
                 Evaluate("{ x: 1 , y: self.x / 0 } { x: 10 }"));
@@ -77,7 +89,7 @@ namespace JsonnetBinding.Tests
         
         /// <summary>
         /// Native callbacks allow the host application to extend jsonnet with extra functions implemented in C#. Its
-        /// important that 
+        /// important that the callback cannot be garbage collected while in use.
         /// </summary>
         [TestMethod]
         public void NativeCallbacks()
@@ -159,17 +171,60 @@ true
         }
 
         /// <summary>
-        /// The import callback should throw an excpetion if there is an error.
+        /// The import callback is invoked when jsonnet wants to load an external file.
+        /// </summary>
+        [TestMethod]
+        public void ImportCallback()
+        {
+            Vm.ImportCallback = (string dir, string rel, out string here) =>
+            {
+                Assert.AreEqual(Path.GetDirectoryName(Filename) + Path.DirectorySeparatorChar, dir);
+                Assert.AreEqual("bar.libsonnet", rel);
+                here = "";
+                return "42";
+            };
+            
+            GC.Collect();
+
+            var result = Evaluate("local bar = import 'bar.libsonnet';bar");
+            
+            Assert.AreEqual("42" + Environment.NewLine, result);
+        }
+
+        /// <summary>
+        /// The here output argument of the import callback is used in stack traces in the case where there is an error
+        /// in the imported file.
+        /// </summary>
+        [TestMethod]
+        public void HereReturnedByImportCallback()
+        {
+            Vm.ImportCallback = (string dir, string rel, out string here) =>
+            {
+                here = "/a/b/bar.libsonnet";
+                return "{,}";
+            };
+
+            GC.Collect();
+
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(
+                "local foo = import 'foo.libsonnet';{'foo': foo}"));
+
+            Assert.That.StartsWith(ex.Message, "STATIC ERROR: /a/b/bar.libsonnet:1:2");
+        }
+        
+        /// <summary>
+        /// The import callback should throw an exception if there is an error.
         /// </summary>
         [TestMethod]
         public void ExceptionThrownInImportCallback()
         {
             Vm.ImportCallback = (string dir, string rel, out string here) => throw new Exception("Test error");
             
+            GC.Collect();
+            
             var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("import 'test.libjsonnet'"));
-            Assert.AreEqual($@"RUNTIME ERROR: couldn't open import ""test.libjsonnet"": Test error
-	{Filename}:1:1-25	
-", ex.Message);
+            Assert.That.StartsWith(ex.Message,
+                "RUNTIME ERROR: couldn't open import \"test.libjsonnet\": Test error");
         }
     }
 }
