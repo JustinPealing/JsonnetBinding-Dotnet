@@ -123,10 +123,24 @@ true
         }
 
         /// <summary>
+        /// If the type supplied to a native callback is not compatible with the type on the callback, then an
+        /// exception will be thrown.
+        /// </summary>
+        [TestMethod]
+        public void NativeCallbackTypeMismatch()
+        {
+            Vm.AddNativeCallback("test", new Func<int, string>(s => "aaa"));
+
+            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')('a')"));
+            Assert.That.StartsWith(ex.Message,
+                "RUNTIME ERROR: Object of type 'System.String' cannot be converted to type 'System.Int32'.");
+        }
+
+        /// <summary>
         /// If a native callback fails, it should throw an exception.
         /// </summary>
         [TestMethod]
-        public void ExceptionThownInNativeCallback()
+        public void NativeCallbackExceptionThown()
         {
             Vm.AddNativeCallback("test", new Func<object, string>(s => throw new Exception("Test error")));
 
@@ -162,7 +176,7 @@ true
         /// in the imported file.
         /// </summary>
         [TestMethod]
-        public void HereReturnedByImportCallback()
+        public void ImportCallbackReturnsHere()
         {
             Vm.ImportCallback = (string dir, string rel, out string here) =>
             {
@@ -182,7 +196,7 @@ true
         /// The import callback should throw an exception if there is an error.
         /// </summary>
         [TestMethod]
-        public void ExceptionThrownInImportCallback()
+        public void ImportCallbackExceptionThrown()
         {
             Vm.ImportCallback = (string dir, string rel, out string here) => throw new Exception("Test error");
             

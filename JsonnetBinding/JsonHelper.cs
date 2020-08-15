@@ -60,12 +60,13 @@ namespace JsonnetBinding
             throw new InvalidOperationException($"Not able to convert type {v.GetType()} to JsonnetJsonValue");
         }
 
-        public static object ToManaged(JsonnetVmHandle vm, IntPtr v)
+        /// <summary>
+        /// Converts a native jsonnet value into its managed equivalent.
+        /// </summary>
+        public static object ConvertNativeArgumentToManaged(JsonnetVmHandle vm, IntPtr v, Type type)
         {
             if (NativeMethods.jsonnet_json_extract_null(vm, v))
-            {
                 return null;
-            }
 
             var str = NativeMethods.jsonnet_json_extract_string(vm, v);
             if (str != IntPtr.Zero)
@@ -75,9 +76,7 @@ namespace JsonnetBinding
             }
             
             if (NativeMethods.jsonnet_json_extract_number(vm, v, out var val))
-            {
                 return val;
-            }
 
             var b = NativeMethods.jsonnet_json_extract_bool(vm, v);
             if (b == 0) return false;

@@ -102,13 +102,13 @@ namespace JsonnetBinding
 
         public JsonnetVm AddNativeCallback(string name, Delegate d)
         {
-            var parameters = d.Method.GetParameters().Select(p => p.Name).ToArray();
+            var parameters = d.Method.GetParameters();
 
             IntPtr NativeCallback(IntPtr ctx, IntPtr argv, out bool success)
             {
                 try
                 {
-                    var convertedArgs = MarshalNativeCallbackArgs(argv, parameters.Length);
+                    var convertedArgs = MarshalNativeCallbackArgs(argv, parameters);
                     var result = d.Method.Invoke(d.Target, convertedArgs);
                     success = true;
                     return JsonHelper.ConvertToNative(_handle, result);
@@ -125,20 +125,26 @@ namespace JsonnetBinding
                 }
             }
 
-            NativeMethods.jsonnet_native_callback(
-                _handle, name, NativeCallback, IntPtr.Zero, parameters.Append(null).ToArray());
+            var parameterNames = parameters.Select(p => p.Name).Append(null).ToArray();
+            
+            NativeMethods.jsonnet_native_callback(_handle, name, NativeCallback, IntPtr.Zero, parameterNames);
             
             // To make sure the delegate passed to jsonnet_native_callback is not garbage collected
             _nativeCallbacks[name] = NativeCallback;
             return this;
         }
         
-        private object[] MarshalNativeCallbackArgs(IntPtr argv, int parameters)
+        private object[] MarshalNativeCallbackArgs(IntPtr argv, ParameterInfo[] parameters)
         {
-            if (parameters == 0) return Array.Empty<object>();
-            var args = new IntPtr[parameters];
-            Marshal.Copy(argv, args, 0, parameters);
-            return args.Select(a => JsonHelper.ToManaged(_handle, a)).ToArray();
+            // argv is a pointer to a null-terminated array of arguments, however we know that the length of the array
+            // will be equal to the number of parameters on the method as the jsonnet vm validates that the number of
+            // arguments supplied matches the number of arguments on the native callback
+            if (parameters.Length == 0) return Array.Empty<object>();
+            var args = new IntPtr[parameters.Length];
+            Marshal.Copy(argv, args, 0, parameters.Length);
+            return parameters
+                .Select((t, i) => JsonHelper.ConvertNativeArgumentToManaged(_handle, args[i], t.ParameterType))
+                .ToArray();
         }
 
         /// <summary>
