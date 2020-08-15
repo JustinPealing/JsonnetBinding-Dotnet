@@ -115,6 +115,7 @@ namespace JsonnetBinding
                 }
                 catch (TargetInvocationException ex)
                 {
+                    // Because we are invoking a delegate, any exception thrown by the delegate will be wrapped
                     success = false;
                     return JsonHelper.ConvertToNative(_handle, ex.InnerException?.Message);
                 }

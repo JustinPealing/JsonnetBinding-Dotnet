@@ -5,14 +5,14 @@
 Evaluating a file.
 
 ```
-var result = Jsonnet.EvaluateFile("test.jsonnet");
+var result = new JsonnetVm().EvaluateFile("test.jsonnet");
 ```
 
 Evaluating a snippet.
 
 ```
-var result = Jsonnet.EvaluateSnippet(
-    "test.jsonnet"
+var result = new JsonnetVm().EvaluateSnippet(
+    "test.jsonnet",
     "{ x: 1 , y: self.x + 1 } { x: 10 }"
 );
 ```
