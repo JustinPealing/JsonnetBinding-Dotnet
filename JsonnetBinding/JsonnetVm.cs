@@ -143,7 +143,7 @@ namespace JsonnetBinding
             var args = new IntPtr[parameters.Length];
             Marshal.Copy(argv, args, 0, parameters.Length);
             return parameters
-                .Select((t, i) => JsonHelper.ConvertNativeArgumentToManaged(_handle, args[i], t.ParameterType))
+                .Select((t, i) => JsonHelper.ConvertNativeArgumentToManaged(_handle, args[i]))
                 .ToArray();
         }
 

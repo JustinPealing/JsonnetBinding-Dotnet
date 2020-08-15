@@ -7,6 +7,9 @@ namespace JsonnetBinding
 {
     internal static class JsonHelper
     {
+        /// <summary>
+        /// Converts the managed object returned from a native callback into its native jsonnet equivalent.
+        /// </summary>
         public static IntPtr ConvertToNative(JsonnetVmHandle vm, object v)
         {
             return v switch
@@ -71,9 +74,9 @@ namespace JsonnetBinding
         }
 
         /// <summary>
-        /// Converts a native jsonnet value into its managed equivalent.
+        /// Converts a native jsonnet value supplied to a native method into its managed equivalent.
         /// </summary>
-        public static object ConvertNativeArgumentToManaged(JsonnetVmHandle vm, IntPtr v, Type type)
+        public static object ConvertNativeArgumentToManaged(JsonnetVmHandle vm, IntPtr v)
         {
             if (NativeMethods.jsonnet_json_extract_null(vm, v))
                 return null;
