@@ -140,7 +140,7 @@ true
 
             var ex = Assert.ThrowsException<JsonnetException>(() =>
                 Vm.EvaluateSnippet("test.jsonner", "std.native('test')('a')"));
-            Assert.That.StartsWith(ex.Message, @"RUNTIME ERROR: Test error");
+            Assert.That.StartsWith(ex.Message, "RUNTIME ERROR: Test error");
         }
         
         /// <summary>
