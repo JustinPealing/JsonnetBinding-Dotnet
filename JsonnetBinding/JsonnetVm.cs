@@ -16,14 +16,28 @@ namespace JsonnetBinding
         
         public JsonnetVm() => _handle = NativeMethods.jsonnet_make();
 
+        /// <summary>
+        /// Set the maximum stack depth.
+        /// </summary>
         public uint MaxStack
         {
             set => NativeMethods.jsonnet_max_stack(_handle, value);
         }
 
+        /// <summary>
+        /// Set the number of objects required before a garbage collection cycle is allowed.
+        /// </summary>
         public uint GcMinObjects
         {
             set => NativeMethods.jsonnet_gc_min_objects(_handle, value);
+        }
+
+        /// <summary>
+        /// Run the garbage collector after this amount of growth in the number of objects.
+        /// </summary>
+        public double GcGrowthTrigger
+        {
+            set => NativeMethods.jsonnet_gc_growth_trigger(_handle, value);
         }
 
         public uint MaxTrace
@@ -31,6 +45,10 @@ namespace JsonnetBinding
             set => NativeMethods.jsonnet_max_trace(_handle, value);
         }
 
+        /// <summary>
+        /// Set the callback used to load imports.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">The supplied value is null.</exception>
         public ImportCallback ImportCallback
         {
             set
