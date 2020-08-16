@@ -111,18 +111,18 @@ namespace JsonnetBinding
                     var convertedArgs = MarshalNativeCallbackArgs(argv, parameters);
                     var result = d.Method.Invoke(d.Target, convertedArgs);
                     success = true;
-                    return JsonHelper.ConvertToNative(_handle, result);
+                    return JsonConvert.ConvertToNative(_handle, result);
                 }
                 catch (TargetInvocationException ex)
                 {
                     // Because we are invoking a delegate, any exception thrown by the delegate will be wrapped
                     success = false;
-                    return JsonHelper.ConvertToNative(_handle, ex.InnerException?.Message);
+                    return JsonConvert.ConvertToNative(_handle, ex.InnerException?.Message);
                 }
                 catch (Exception ex)
                 {
                     success = false;
-                    return JsonHelper.ConvertToNative(_handle, ex.Message);
+                    return JsonConvert.ConvertToNative(_handle, ex.Message);
                 }
             }
 
@@ -144,7 +144,7 @@ namespace JsonnetBinding
             var args = new IntPtr[parameters.Length];
             Marshal.Copy(argv, args, 0, parameters.Length);
             return parameters
-                .Select((t, i) => JsonHelper.ConvertNativeArgumentToManaged(_handle, args[i]))
+                .Select((t, i) => JsonConvert.ConvertNativeArgumentToManaged(_handle, args[i]))
                 .ToArray();
         }
 

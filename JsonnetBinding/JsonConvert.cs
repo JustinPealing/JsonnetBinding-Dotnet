@@ -5,7 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace JsonnetBinding
 {
-    internal static class JsonHelper
+    /// <summary>
+    /// Helper methods for converting JsonnetJsonValues to and from managed objects.  
+    /// </summary>
+    internal static class JsonConvert
     {
         /// <summary>
         /// Converts the managed object returned from a native callback into its native jsonnet equivalent.
