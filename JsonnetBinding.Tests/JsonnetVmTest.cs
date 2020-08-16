@@ -206,5 +206,14 @@ true
             Assert.That.StartsWith(ex.Message,
                 "RUNTIME ERROR: couldn't open import \"test.libjsonnet\": Test error");
         }
+
+        [TestMethod]
+        public void StringOutput()
+        {
+            Vm.StringOutput = true;
+
+            var result = Vm.EvaluateSnippet("test.jsonnet", "'123' + '4'");
+            Assert.AreEqual("1234" + Environment.NewLine, result);
+        }
     }
 }

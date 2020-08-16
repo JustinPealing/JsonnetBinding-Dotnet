@@ -40,11 +40,22 @@ namespace JsonnetBinding
             set => NativeMethods.jsonnet_gc_growth_trigger(_handle, value);
         }
 
+        /// <summary>
+        /// Set the number of lines of stack trace to display (0 for all of them).
+        /// </summary>
         public uint MaxTrace
         {
             set => NativeMethods.jsonnet_max_trace(_handle, value);
         }
 
+        /// <summary>
+        /// Expect a string as output and don't JSON encode it.
+        /// </summary>
+        public bool StringOutput
+        {
+            set => NativeMethods.jsonnet_string_output(_handle, value ? 1 : 0);
+        }
+        
         /// <summary>
         /// Set the callback used to load imports.
         /// </summary>
