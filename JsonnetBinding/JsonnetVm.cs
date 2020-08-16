@@ -35,6 +35,8 @@ namespace JsonnetBinding
         {
             set
             {
+                if (value == null) throw new ArgumentNullException(nameof(value));
+                
                 _importCallback = (IntPtr ctx, string dir, string rel, out IntPtr here, out bool success) =>
                 {
                     try
@@ -102,6 +104,8 @@ namespace JsonnetBinding
 
         public JsonnetVm AddNativeCallback(string name, Delegate d)
         {
+            if (d == null) throw new ArgumentNullException(nameof(d));
+            
             var parameters = d.Method.GetParameters();
 
             JsonnetJsonValue NativeCallback(IntPtr ctx, IntPtr argv, out bool success)

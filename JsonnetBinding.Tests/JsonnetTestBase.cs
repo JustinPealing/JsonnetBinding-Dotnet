@@ -129,6 +129,16 @@ true
         }
 
         /// <summary>
+        /// The native callback delegate cannot be null.
+        /// </summary>
+        [TestMethod]
+        public void NativeCallbackIsNull()
+        {
+            var ex = Assert.ThrowsException<ArgumentNullException>(() => Vm.AddNativeCallback("test", null));
+            Assert.AreEqual("d", ex.ParamName);
+        }
+
+        /// <summary>
         /// If the type supplied to a native callback is not compatible with the type on the callback, then an
         /// exception will be thrown.
         /// </summary>
@@ -155,7 +165,7 @@ true
 	{Filename}:1:1-24	
 ", ex.Message);
         }
-
+        
         /// <summary>
         /// The import callback is invoked when jsonnet wants to load an external file.
         /// </summary>
@@ -176,6 +186,12 @@ true
             
             Assert.AreEqual("42" + Environment.NewLine, result);
         }
+
+        /// <summary>
+        /// The import callback cannot be null.
+        /// </summary>
+        [TestMethod]
+        public void ImportCallbackIsNull() => Assert.ThrowsException<ArgumentNullException>(() => Vm.ImportCallback = null);
 
         /// <summary>
         /// The here output argument of the import callback is used in stack traces in the case where there is an error
