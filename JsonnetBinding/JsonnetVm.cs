@@ -7,7 +7,7 @@ using System.Text;
 
 namespace JsonnetBinding
 {
-    public class JsonnetVm : IDisposable
+    public class JsonnetVm
     {
         private readonly JsonnetVmHandle _handle;
         private readonly IDictionary<string, NativeMethods.JsonnetNativeCallback> _nativeCallbacks =
@@ -213,7 +213,5 @@ namespace JsonnetBinding
             Marshal.Copy(bytes, 0, result, bytes.Length);
             return result;
         }
-        
-        public void Dispose() => _handle?.Dispose();
     }
 }
