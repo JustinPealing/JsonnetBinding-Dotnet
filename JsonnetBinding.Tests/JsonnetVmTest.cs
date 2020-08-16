@@ -6,35 +6,22 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace JsonnetBinding.Tests
 {
     /// <summary>
-    /// Test cases for both <see cref="Jsonnet.EvaluateSnippet"/> and <see cref="Jsonnet.EvaluateFile"/>. Most of the
-    /// test cases for these two methods are the same, however it is necessary to test them each indepdendently, so
-    /// this base class defines the test cases using the abstract <see cref="Evaluate"/> method, which is implemented
-    /// twice, once in <see cref="EvaluateFileTest"/>, and again in <see cref="EvaluateSnippetTest"/>.
+    /// Tests for <see cref="JsonnetVm"/>.
     /// </summary>
-    public abstract class JsonnetTestBase
+    [TestClass]
+    public class JsonnetVmTest
     {
         protected readonly JsonnetVm Vm = new JsonnetVm();
         
         /// <summary>
-        /// Returns the path to the file. In EvaluateSnippetTest this is a hard-coded value, but for EvaluateFileTest
-        /// this is the path to some dynamically created temporary file.
-        /// This properly is mostly used to check error messages.
-        /// </summary>
-        protected abstract string Filename { get; }
-        
-        /// <summary>
-        /// Evaluates the given snippet. This will either invoke EvaluateSnippet, or write the snippet to a file and
-        /// invoke EvaluateFile.
-        /// </summary>
-        protected abstract string Evaluate(string snippet);
-        
-        /// <summary>
-        /// Test evaluating a basic snippet with all optional arguments left with their default values.
+        /// EvaludateFile is used to evaluate a jsonnet file.
         /// </summary>
         [TestMethod]
-        public void EvaluateWithDefaults()
+        public void EvaluateFile()
         {
-            var result = Evaluate("{ x: 1 , y: self.x + 1 } { x: 10 }");
+            var filename = Path.GetTempFileName();
+            File.WriteAllText(filename, "{ x: 1 , y: self.x + 1 } { x: 10 }");
+            var result = Vm.EvaluateFile(filename);
 
             Assert.AreEqual(@"{
    ""x"": 10,
@@ -50,12 +37,9 @@ namespace JsonnetBinding.Tests
         public void ErrorEvaluatingThrowsException()
         {
             var ex = Assert.ThrowsException<JsonnetException>(() =>
-                Evaluate("{ x: 1 , y: self.x / 0 } { x: 10 }"));
+                Vm.EvaluateSnippet("test.jsonnet", "{ x: 1 , y: self.x / 0 } { x: 10 }"));
             
-            Assert.AreEqual(@$"RUNTIME ERROR: division by zero.
-	{Filename}:1:13-23	object <anonymous>
-	During manifestation	
-", ex.Message);
+            Assert.That.StartsWith(ex.Message, "RUNTIME ERROR: division by zero.");
         }
 
         /// <summary>
@@ -75,16 +59,9 @@ namespace JsonnetBinding.Tests
     d: self.c { x +: 1 } 
 }";
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(snippet));
-            
-            Assert.AreEqual($@"RUNTIME ERROR: max stack frames exceeded.
-	{Filename}:4:15-25	object <anonymous>
-	{Filename}:5:15-25	object <anonymous>
-	{Filename}:6:15-25	object <anonymous>
-	{Filename}:6:8-25	object <anonymous>
-	During manifestation	
-",
-                ex.Message);
+            var ex = Assert.ThrowsException<JsonnetException>(() => Vm.EvaluateSnippet("test.jsonnet", snippet));
+
+            Assert.That.StartsWith(ex.Message, "RUNTIME ERROR: max stack frames exceeded.");
         }
         
         /// <summary>
@@ -118,7 +95,7 @@ namespace JsonnetBinding.Tests
                     }
                 }));
 
-            var result = Evaluate(@"
+            var result = Vm.EvaluateSnippet("test.jsonnet", @"
 std.assertEqual(({ x: 1, y: self.x } { x: 2 }).y, 2) &&
 std.assertEqual(std.native('concat')('foo', 'bar'), 'foobar') &&
 std.assertEqual(std.native('return_types')(), {a: [1, 2, 3, null, []], b: 1, c: true, d: null, e: {x: 1, y: 2, z: ['foo']}, f: { Foo: 'bar' }}) &&
@@ -147,7 +124,8 @@ true
         {
             Vm.AddNativeCallback("test", new Func<int, string>(s => "aaa"));
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')('a')"));
+            var ex = Assert.ThrowsException<JsonnetException>(() =>
+                Vm.EvaluateSnippet("test.jsonnet", "std.native('test')('a')"));
             Assert.That.StartsWith(ex.Message,
                 "RUNTIME ERROR: Object of type 'System.String' cannot be converted to type 'System.Int32'.");
         }
@@ -160,10 +138,9 @@ true
         {
             Vm.AddNativeCallback("test", new Func<object, string>(s => throw new Exception("Test error")));
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("std.native('test')('a')"));
-            Assert.AreEqual($@"RUNTIME ERROR: Test error
-	{Filename}:1:1-24	
-", ex.Message);
+            var ex = Assert.ThrowsException<JsonnetException>(() =>
+                Vm.EvaluateSnippet("test.jsonner", "std.native('test')('a')"));
+            Assert.That.StartsWith(ex.Message, @"RUNTIME ERROR: Test error");
         }
         
         /// <summary>
@@ -174,7 +151,7 @@ true
         {
             Vm.ImportCallback = (string dir, string rel, out string here) =>
             {
-                Assert.AreEqual(Path.GetDirectoryName(Filename) + Path.DirectorySeparatorChar, dir);
+                Assert.AreEqual("/some/path/", dir);
                 Assert.AreEqual("bar.libsonnet", rel);
                 here = "";
                 return "42";
@@ -182,7 +159,7 @@ true
             
             GC.Collect();
 
-            var result = Evaluate("local bar = import 'bar.libsonnet';bar");
+            var result = Vm.EvaluateSnippet("/some/path/test.jsonnet", "local bar = import 'bar.libsonnet';bar");
             
             Assert.AreEqual("42" + Environment.NewLine, result);
         }
@@ -208,8 +185,8 @@ true
 
             GC.Collect();
 
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate(
-                "local foo = import 'foo.libsonnet';{'foo': foo}"));
+            var ex = Assert.ThrowsException<JsonnetException>(() =>
+                Vm.EvaluateSnippet("test.jsonnet", "local foo = import 'foo.libsonnet';{'foo': foo}"));
 
             Assert.That.StartsWith(ex.Message, "STATIC ERROR: /a/b/bar.libsonnet:1:2");
         }
@@ -223,8 +200,9 @@ true
             Vm.ImportCallback = (string dir, string rel, out string here) => throw new Exception("Test error");
             
             GC.Collect();
-            
-            var ex = Assert.ThrowsException<JsonnetException>(() => Evaluate("import 'test.libjsonnet'"));
+
+            var ex = Assert.ThrowsException<JsonnetException>(() =>
+                Vm.EvaluateSnippet("test.jsonnet", "import 'test.libjsonnet'"));
             Assert.That.StartsWith(ex.Message,
                 "RUNTIME ERROR: couldn't open import \"test.libjsonnet\": Test error");
         }
