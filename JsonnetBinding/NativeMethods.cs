@@ -12,7 +12,7 @@ namespace JsonnetBinding
         public delegate IntPtr JsonnetImportCallback(
             IntPtr ctx, string baseDir, string rel, out IntPtr foundHere, out bool success);
 
-        public delegate IntPtr JsonnetNativeCallback(
+        public delegate JsonnetJsonValue JsonnetNativeCallback(
             IntPtr ctx, IntPtr argv, out bool success);
         
         [DllImport("libjsonnet.so")]
@@ -31,43 +31,43 @@ namespace JsonnetBinding
         public static extern void jsonnet_string_output(JsonnetVmHandle vm, int v);
 
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_extract_string(JsonnetVmHandle vm, IntPtr v);
+        public static extern IntPtr jsonnet_json_extract_string(JsonnetVmHandle vm, JsonnetJsonValue v);
 
         [DllImport("libjsonnet.so")]
-        public static extern bool jsonnet_json_extract_number(JsonnetVmHandle vm, IntPtr v, out double outVal);
+        public static extern bool jsonnet_json_extract_number(JsonnetVmHandle vm, JsonnetJsonValue v, out double outVal);
 
         [DllImport("libjsonnet.so")]
-        public static extern int jsonnet_json_extract_bool(JsonnetVmHandle vm, IntPtr v);
+        public static extern int jsonnet_json_extract_bool(JsonnetVmHandle vm, JsonnetJsonValue v);
         
         [DllImport("libjsonnet.so")]
-        public static extern bool jsonnet_json_extract_null(JsonnetVmHandle vm, IntPtr v);
+        public static extern bool jsonnet_json_extract_null(JsonnetVmHandle vm, JsonnetJsonValue v);
 
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_string(JsonnetVmHandle vm, string v);
+        public static extern JsonnetJsonValue jsonnet_json_make_string(JsonnetVmHandle vm, string v);
         
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_number(JsonnetVmHandle vm, double v);
+        public static extern JsonnetJsonValue jsonnet_json_make_number(JsonnetVmHandle vm, double v);
         
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_bool(JsonnetVmHandle vm, bool v);
+        public static extern JsonnetJsonValue jsonnet_json_make_bool(JsonnetVmHandle vm, bool v);
         
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_null(JsonnetVmHandle vm);
+        public static extern JsonnetJsonValue jsonnet_json_make_null(JsonnetVmHandle vm);
         
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_array(JsonnetVmHandle vm);
+        public static extern JsonnetJsonValue jsonnet_json_make_array(JsonnetVmHandle vm);
         
         [DllImport("libjsonnet.so")]
-        public static extern void jsonnet_json_array_append(JsonnetVmHandle vm, IntPtr arr, IntPtr v);
+        public static extern void jsonnet_json_array_append(JsonnetVmHandle vm, JsonnetJsonValue arr, JsonnetJsonValue v);
         
         [DllImport("libjsonnet.so")]
-        public static extern IntPtr jsonnet_json_make_object(JsonnetVmHandle vm);
+        public static extern JsonnetJsonValue jsonnet_json_make_object(JsonnetVmHandle vm);
         
         [DllImport("libjsonnet.so")]
-        public static extern void jsonnet_json_object_append(JsonnetVmHandle vm, IntPtr obj, string f, IntPtr v);
+        public static extern void jsonnet_json_object_append(JsonnetVmHandle vm, JsonnetJsonValue obj, string f, JsonnetJsonValue v);
         
         [DllImport("libjsonnet.so")]
-        public static extern void jsonnet_json_destroy(JsonnetVmHandle vm, IntPtr v);
+        public static extern void jsonnet_json_destroy(JsonnetVmHandle vm, JsonnetJsonValue v);
 
         [DllImport("libjsonnet.so")]
         public static extern IntPtr jsonnet_realloc(JsonnetVmHandle vm, IntPtr buf, UIntPtr sz);

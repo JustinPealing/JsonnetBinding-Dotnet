@@ -13,7 +13,7 @@ namespace JsonnetBinding
         /// <summary>
         /// Converts the managed object returned from a native callback into its native jsonnet equivalent.
         /// </summary>
-        public static IntPtr ConvertToNative(JsonnetVmHandle vm, object v)
+        public static JsonnetJsonValue ConvertToNative(JsonnetVmHandle vm, object v)
         {
             return v switch
             {
@@ -28,7 +28,7 @@ namespace JsonnetBinding
             };
         }
 
-        private static IntPtr ConvertDictionaryToNative(JsonnetVmHandle vm, IDictionary<string, object> dictionary)
+        private static JsonnetJsonValue ConvertDictionaryToNative(JsonnetVmHandle vm, IDictionary<string, object> dictionary)
         {
             var obj = NativeMethods.jsonnet_json_make_object(vm);
             try
@@ -37,14 +37,14 @@ namespace JsonnetBinding
                     NativeMethods.jsonnet_json_object_append(vm, obj, val.Key, ConvertToNative(vm, val.Value));
                 return obj;
             }
-            catch (Exception e)
+            catch
             {
                 NativeMethods.jsonnet_json_destroy(vm, obj);
                 throw;
             }
         }
 
-        private static IntPtr ConvertEnumerableToNative(JsonnetVmHandle vm, IEnumerable enumerable)
+        private static JsonnetJsonValue ConvertEnumerableToNative(JsonnetVmHandle vm, IEnumerable enumerable)
         {
             var array = NativeMethods.jsonnet_json_make_array(vm);
             try
@@ -60,7 +60,7 @@ namespace JsonnetBinding
             }
         }
 
-        private static IntPtr ConvertObjectPropertiesToNative(JsonnetVmHandle vm, object v)
+        private static JsonnetJsonValue ConvertObjectPropertiesToNative(JsonnetVmHandle vm, object v)
         {
             var obj = NativeMethods.jsonnet_json_make_object(vm);
             try
@@ -79,7 +79,7 @@ namespace JsonnetBinding
         /// <summary>
         /// Converts a native jsonnet value supplied to a native method into its managed equivalent.
         /// </summary>
-        public static object ConvertNativeArgumentToManaged(JsonnetVmHandle vm, IntPtr v)
+        public static object ConvertNativeArgumentToManaged(JsonnetVmHandle vm, JsonnetJsonValue v)
         {
             if (NativeMethods.jsonnet_json_extract_null(vm, v))
                 return null;

@@ -104,7 +104,7 @@ namespace JsonnetBinding
         {
             var parameters = d.Method.GetParameters();
 
-            IntPtr NativeCallback(IntPtr ctx, IntPtr argv, out bool success)
+            JsonnetJsonValue NativeCallback(IntPtr ctx, IntPtr argv, out bool success)
             {
                 try
                 {
@@ -144,7 +144,7 @@ namespace JsonnetBinding
             var args = new IntPtr[parameters.Length];
             Marshal.Copy(argv, args, 0, parameters.Length);
             return parameters
-                .Select((t, i) => JsonConvert.ConvertNativeArgumentToManaged(_handle, args[i]))
+                .Select((t, i) => JsonConvert.ConvertNativeArgumentToManaged(_handle, new JsonnetJsonValue(args[i])))
                 .ToArray();
         }
 
